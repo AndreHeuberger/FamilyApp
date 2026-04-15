@@ -135,7 +135,10 @@ hr{border:none;border-top:0.5px solid rgba(0,0,0,0.1);margin:1rem 0}
       </select>
       <button class="btn-main" onclick="addEv()">+ Hinzufügen</button>
     </div>
-    <div class="sec-lbl">Alle Ereignisse</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:1rem;margin-bottom:10px">
+      <div class="sec-lbl" style="margin:0" id="ev-list-label">Alle Ereignisse</div>
+      <button id="ev-reset-btn" onclick="clearDaySelection()" style="display:none;font-size:12px;padding:4px 10px;color:var(--color-text-secondary,#777);border-color:rgba(0,0,0,0.15)">✕ Auswahl aufheben</button>
+    </div>
     <div id="ev-list"></div>
   </div>
 
@@ -226,12 +229,13 @@ function showTab(t,btn){
   btn.classList.add('on');
 }
 
+function clearDaySelection(){selDay=null;document.getElementById('day-panel').style.display='none';renderCal()}
 function cm(d){S.month+=d;if(S.month>11){S.month=0;S.year++}if(S.month<0){S.month=11;S.year--}selDay=null;document.getElementById('day-panel').style.display='none';renderCal()}
 function fd(d){if(!d)return '';const[y,m,day]=d.split('-');return day+'.'+m+'.'+y}
 function ds(y,m,d){return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0')}
 
 function selectDay(date){
-  if(selDay===date){selDay=null;document.getElementById('day-panel').style.display='none';renderCal();return}
+  if(selDay===date){clearDaySelection();return}
   selDay=date;
   document.getElementById('ev-d').value=date;
   const[y,m,d]=date.split('-');
@@ -272,9 +276,20 @@ function renderCal(){
   }
   g.innerHTML=html;
   const el=document.getElementById('ev-list');
-  const sorted=[...S.events].sort((a,b)=>a.date.localeCompare(b.date));
-  if(!sorted.length){el.innerHTML='<p class="empty-hint">Noch keine Ereignisse.</p>';return}
-  el.innerHTML=sorted.map((e,i)=>`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><div><div class="entry-title">${h(e.title)}</div><div class="entry-meta">${fd(e.date)}&nbsp;<span class="badge b-${e.cat}">${CL[e.cat]||e.cat}</span></div></div><button class="del" onclick="delEv(${i})">✕ Löschen</button></div></div>`).join('');
+  const lbl=document.getElementById('ev-list-label');
+  const resetBtn=document.getElementById('ev-reset-btn');
+  const filtered=selDay ? S.events.filter(e=>e.date===selDay) : [...S.events];
+  const sorted=filtered.sort((a,b)=>a.date.localeCompare(b.date));
+  if(selDay){
+    const[y,m,d]=selDay.split('-');
+    lbl.textContent=parseInt(d)+'. '+MN[parseInt(m)-1]+' '+y;
+    resetBtn.style.display='';
+  } else {
+    lbl.textContent='Alle Ereignisse';
+    resetBtn.style.display='none';
+  }
+  if(!sorted.length){el.innerHTML='<p class="empty-hint">'+(selDay?'Keine Termine an diesem Tag.':'Noch keine Ereignisse.')+'</p>';return}
+  el.innerHTML=sorted.map((e,i)=>{const gi=S.events.indexOf(e);return`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><div><div class="entry-title">${h(e.title)}</div><div class="entry-meta">${fd(e.date)}&nbsp;<span class="badge b-${e.cat}">${CL[e.cat]||e.cat}</span></div></div><button class="del" onclick="delEv(${gi})">✕ Löschen</button></div></div>`}).join('');
 }
 function addEv(){
   const d=document.getElementById('ev-d').value,t=document.getElementById('ev-t').value.trim(),c=document.getElementById('ev-c').value;
