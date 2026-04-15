@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Familien-App</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f3;color:#1a1a18;min-height:100vh}
+.screen{display:none;padding:1.5rem;max-width:800px;margin:0 auto}
+.screen.active{display:block}
+.card{background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;padding:1.25rem;margin-bottom:12px}
+input[type=text],input[type=date],input[type=password],select{padding:9px 12px;font-size:14px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;background:#fff;color:#1a1a18;font-family:inherit}
+input:focus,select:focus{outline:none;border-color:#378add;box-shadow:0 0 0 3px rgba(55,138,221,0.1)}
+button{padding:9px 18px;font-size:14px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;background:#fff;cursor:pointer;font-family:inherit;color:#1a1a18}
+button:hover{background:#f0ede8}
+.btn-main{background:#1a1a18;color:#fff;border-color:#1a1a18}
+.btn-main:hover{background:#333;border-color:#333}
+.tabs{display:flex;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap}
+.tab{padding:7px 16px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.15);font-size:14px;cursor:pointer;background:#fff;color:#555}
+.tab.on{background:#1a1a18;color:#fff;border-color:#1a1a18}
+.row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.entry-title{font-size:15px;font-weight:500}
+.entry-meta{font-size:13px;color:#777;margin-top:3px}
+.badge{display:inline-block;font-size:11px;padding:3px 10px;border-radius:6px;font-weight:500}
+.b-blue{background:#e6f1fb;color:#0c447c}
+.b-green{background:#eaf3de;color:#27500a}
+.b-amber{background:#faeeda;color:#633806}
+.b-red{background:#fcebeb;color:#791f1f}
+.del{font-size:12px;color:#bbb;border:none;background:none;cursor:pointer;padding:4px 8px;border-radius:6px;white-space:nowrap}
+.del:hover{background:#fcebeb;color:#a32d2d}
+.er{font-size:13px;color:#a32d2d;margin-top:6px;min-height:18px}
+hr{border:none;border-top:0.5px solid rgba(0,0,0,0.1);margin:1rem 0}
+.sec-lbl{font-size:12px;font-weight:500;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;margin-top:1rem}
+.empty-hint{font-size:14px;color:#bbb;padding:10px 0}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:0.5px solid rgba(0,0,0,0.1);flex-wrap:wrap;gap:8px}
+.topbar h1{font-size:18px;font-weight:500}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+.lock-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f5f5f3;padding:1rem}
+.lock-card{background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:16px;padding:2rem;width:100%;max-width:340px}
+.lock-card h1{font-size:20px;font-weight:500;margin-bottom:4px}
+.lock-card p{font-size:14px;color:#777;margin-bottom:1.5rem;line-height:1.5}
+.field{margin-bottom:12px}
+.field label{font-size:13px;color:#777;display:block;margin-bottom:4px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px}
+.cl{font-size:11px;color:#888;text-align:center;padding:4px 0}
+.cc{min-height:38px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.08);display:flex;flex-direction:column;align-items:center;padding:4px 2px;font-size:13px;background:#fff;cursor:pointer;user-select:none}
+.cc:hover:not(.empty){background:#f0ede8}
+.cc.today{border-color:#378add;color:#185fa5;font-weight:500}
+.cc.selected{background:#1a1a18;color:#fff;border-color:#1a1a18}
+.cc.selected.today{background:#185fa5;border-color:#185fa5}
+.dot{display:none;width:5px;height:5px;border-radius:50%;background:#378add;margin-top:2px}
+.cc.has-ev .dot{display:block}
+.cc.selected .dot{background:rgba(255,255,255,0.7)}
+.cc.empty{background:transparent;border-color:transparent;cursor:default}
+.mnav{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.mnav button{border:none;background:none;cursor:pointer;font-size:22px;color:#888;padding:0 8px;line-height:1}
+.mnav span{flex:1;text-align:center;font-size:15px;font-weight:500}
+.day-panel{background:#f0ede8;border-radius:10px;padding:1rem;margin:10px 0 1rem}
+.day-panel-title{font-size:14px;font-weight:500;color:#444;margin-bottom:10px}
+.day-ev-item{display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:8px;padding:8px 12px;margin-bottom:6px;border:0.5px solid rgba(0,0,0,0.08)}
+.no-ev{font-size:13px;color:#bbb}
+.drop-zone{border:1.5px dashed rgba(0,0,0,0.18);border-radius:12px;padding:2rem 1rem;text-align:center;cursor:pointer;background:#fafaf8;margin-bottom:16px;transition:all .15s}
+.drop-zone:hover,.drop-zone.drag-over{border-color:#378add;background:#f0f7ff}
+.drop-zone p{font-size:15px;color:#666;margin-bottom:6px}
+.drop-zone span{font-size:13px;color:#bbb}
+.drop-zone input[type=file]{display:none}
+.doc-card{display:flex;align-items:center;gap:12px;justify-content:space-between}
+.doc-info{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+.doc-icon-big{font-size:26px;flex-shrink:0}
+.doc-name{font-size:15px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.doc-meta{font-size:12px;color:#bbb;margin-top:2px}
+.doc-actions{display:flex;gap:6px;flex-shrink:0}
+.btn-dl{font-size:12px;padding:5px 12px;color:#185fa5;border-color:rgba(55,138,221,0.3);background:#f0f7ff}
+.btn-dl:hover{background:#e6f1fb}
+.size-warn{font-size:13px;color:#7a5000;background:#faeeda;border-radius:8px;padding:8px 12px;margin-bottom:10px}
+</style>
+</head>
+<body>
+
+<div id="lock-wrap" class="lock-screen">
+  <div class="lock-card">
+    <h1 id="lock-title">🏠 Familien-App</h1>
+    <p id="lock-sub">Bitte Passwort eingeben.</p>
+    <div class="field">
+      <label>Passwort</label>
+      <input type="password" id="pw-in" placeholder="Passwort eingeben" onkeydown="if(event.key==='Enter')tryLogin()" autofocus />
+    </div>
+    <div id="pw-err" class="er"></div>
+    <button class="btn-main" style="width:100%;margin-top:8px;padding:12px" onclick="tryLogin()">Anmelden</button>
+  </div>
+</div>
+
+<div id="app-wrap" class="screen">
+  <div class="topbar">
+    <h1>🏠 Familien-App</h1>
+    <div class="tools">
+      <button onclick="exportData()">⬇ Export</button>
+      <button onclick="triggerImport()">⬆ Import</button>
+      <button onclick="changePw()">🔑 Passwort</button>
+      <button onclick="logout()">🔒 Sperren</button>
+    </div>
+  </div>
+  <input type="file" id="imp-file" accept=".json" style="display:none" onchange="importData(event)" />
+
+  <div class="tabs">
+    <button class="tab on" onclick="showTab('kal',this)">📅 Kalender</button>
+    <button class="tab" onclick="showTab('dat',this)">📌 Wichtige Daten</button>
+    <button class="tab" onclick="showTab('dok',this)">📁 Dokumente</button>
+    <button class="tab" onclick="showTab('not',this)">📝 Notizen</button>
+  </div>
+
+  <div id="t-kal">
+    <div class="mnav">
+      <button onclick="cm(-1)">‹</button>
+      <span id="mlbl"></span>
+      <button onclick="cm(1)">›</button>
+    </div>
+    <div class="cal-grid" id="cgrid"></div>
+    <p style="font-size:12px;color:#ccc;text-align:right;margin-top:4px;margin-bottom:4px">Tag anklicken für Tagesansicht</p>
+    <div id="day-panel" style="display:none" class="day-panel">
+      <div class="day-panel-title" id="day-panel-title"></div>
+      <div id="day-ev-list"></div>
+    </div>
+    <hr>
+    <div class="sec-lbl">Neues Ereignis</div>
+    <div class="row">
+      <input type="date" id="ev-d" style="flex:0.6" />
+      <input type="text" id="ev-t" placeholder="Titel (z.B. Arzttermin Mama)" style="flex:1" />
+      <select id="ev-c" style="flex:0.5">
+        <option value="blue">Termin</option>
+        <option value="green">Geburtstag</option>
+        <option value="amber">Ausflug</option>
+        <option value="red">Wichtig</option>
+      </select>
+      <button class="btn-main" onclick="addEv()">+ Hinzufügen</button>
+    </div>
+    <div class="sec-lbl">Alle Ereignisse</div>
+    <div id="ev-list"></div>
+  </div>
+
+  <div id="t-dat" style="display:none">
+    <div class="sec-lbl">Neuer Eintrag</div>
+    <div class="row">
+      <input type="text" id="dl" placeholder="Bezeichnung (z.B. Reisepass Papa)" style="flex:1" />
+      <input type="text" id="dv" placeholder="Wert / Nummer / Datum" style="flex:1" />
+      <select id="dc" style="flex:0.5">
+        <option value="blue">Ausweis / Pass</option>
+        <option value="green">Gesundheit</option>
+        <option value="amber">Versicherung</option>
+        <option value="red">Notfall</option>
+      </select>
+      <button class="btn-main" onclick="addD()">+ Hinzufügen</button>
+    </div>
+    <div id="d-list"></div>
+  </div>
+
+  <div id="t-dok" style="display:none">
+    <div id="size-warn" class="size-warn" style="display:none">
+      ⚠️ Grosse Dateien (über 5 MB) können den Browser-Speicher belasten. Tipp: Nutze den Export regelmässig als Backup.
+    </div>
+    <div class="drop-zone" id="drop-zone"
+         onclick="document.getElementById('file-pick').click()"
+         ondragover="dzOver(event)" ondragleave="dzLeave(event)" ondrop="dzDrop(event)">
+      <p>📂 Dateien hier hineinziehen</p>
+      <span>oder klicken zum Auswählen &mdash; PDF, Bilder, Word, Excel, ZIP, ...</span>
+      <input type="file" id="file-pick" multiple onchange="handleFiles(this.files)" />
+    </div>
+    <div id="doc-list"></div>
+  </div>
+
+  <div id="t-not" style="display:none">
+    <div class="sec-lbl">Neue Notiz</div>
+    <div class="row">
+      <input type="text" id="nt" placeholder="Titel (z.B. WLAN-Passwort)" style="flex:0.5" />
+      <input type="text" id="nb" placeholder="Inhalt" style="flex:1" />
+      <button class="btn-main" onclick="addN()">+ Hinzufügen</button>
+    </div>
+    <div id="n-list"></div>
+  </div>
+</div>
+
+<script>
+const SK='fam_data3',PK='fam_pw';
+let S={events:[],data:[],docs:[],notes:[],month:new Date().getMonth(),year:new Date().getFullYear()};
+let selDay=null;
+const MN=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+const CL={blue:'Termin',green:'Geburtstag',amber:'Ausflug',red:'Wichtig'};
+const DL={blue:'Ausweis / Pass',green:'Gesundheit',amber:'Versicherung',red:'Notfall'};
+
+function h(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function save(){try{localStorage.setItem(SK,JSON.stringify(S))}catch(e){alert('Speicher voll! Bitte Export durchführen und grosse Dateien löschen.')}}
+function load(){const d=localStorage.getItem(SK);if(d){try{const p=JSON.parse(d);S={...S,...p}}catch(e){}}}
+
+function tryLogin(){
+  const pw=document.getElementById('pw-in').value;
+  const stored=localStorage.getItem(PK);
+  if(!stored){
+    if(!pw.trim()){document.getElementById('pw-err').textContent='Bitte ein Passwort wählen.';return}
+    localStorage.setItem(PK,btoa(encodeURIComponent(pw)));openApp();
+  } else {
+    if(btoa(encodeURIComponent(pw))===stored){openApp()}
+    else{document.getElementById('pw-err').textContent='Falsches Passwort.';document.getElementById('pw-in').value='';document.getElementById('pw-in').focus()}
+  }
+}
+function openApp(){
+  load();
+  document.getElementById('lock-wrap').style.display='none';
+  document.getElementById('app-wrap').classList.add('active');
+  renderCal();renderDat();renderDocs();renderNotes();
+}
+function logout(){
+  document.getElementById('lock-wrap').style.display='flex';
+  document.getElementById('app-wrap').classList.remove('active');
+  document.getElementById('pw-in').value='';document.getElementById('pw-err').textContent='';
+  setTimeout(()=>document.getElementById('pw-in').focus(),100);
+}
+function changePw(){
+  const np=prompt('Neues Passwort:');
+  if(np&&np.trim()){localStorage.setItem(PK,btoa(encodeURIComponent(np.trim())));alert('Passwort gespeichert.')}
+}
+function showTab(t,btn){
+  ['kal','dat','dok','not'].forEach(x=>document.getElementById('t-'+x).style.display='none');
+  document.getElementById('t-'+t).style.display='';
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+function cm(d){S.month+=d;if(S.month>11){S.month=0;S.year++}if(S.month<0){S.month=11;S.year--}selDay=null;document.getElementById('day-panel').style.display='none';renderCal()}
+function fd(d){if(!d)return '';const[y,m,day]=d.split('-');return day+'.'+m+'.'+y}
+function ds(y,m,d){return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0')}
+
+function selectDay(date){
+  if(selDay===date){selDay=null;document.getElementById('day-panel').style.display='none';renderCal();return}
+  selDay=date;
+  document.getElementById('ev-d').value=date;
+  const[y,m,d]=date.split('-');
+  document.getElementById('day-panel-title').textContent=parseInt(d)+'. '+MN[parseInt(m)-1]+' '+y;
+  renderDayPanel();
+  document.getElementById('day-panel').style.display='';
+  renderCal();
+}
+
+function renderDayPanel(){
+  if(!selDay)return;
+  const evs=S.events.filter(e=>e.date===selDay);
+  const dl=document.getElementById('day-ev-list');
+  if(!evs.length){dl.innerHTML='<p class="no-ev">Keine Termine an diesem Tag.</p>';return}
+  dl.innerHTML=evs.map(e=>{
+    const gi=S.events.findIndex(x=>x===e);
+    return`<div class="day-ev-item"><div><span class="badge b-${e.cat}" style="margin-right:8px">${CL[e.cat]}</span><span style="font-size:14px">${h(e.title)}</span></div><button class="del" onclick="delEv(${gi})">✕</button></div>`;
+  }).join('');
+}
+
+function renderCal(){
+  document.getElementById('mlbl').textContent=MN[S.month]+' '+S.year;
+  const g=document.getElementById('cgrid');
+  const today=new Date();
+  const fo=new Date(S.year,S.month,1).getDay();
+  const off=fo===0?6:fo-1;
+  const dim=new Date(S.year,S.month+1,0).getDate();
+  const days=['Mo','Di','Mi','Do','Fr','Sa','So'];
+  const evd=S.events.map(e=>e.date);
+  let html=days.map(d=>'<div class="cl">'+d+'</div>').join('');
+  for(let i=0;i<off;i++)html+='<div class="cc empty"></div>';
+  for(let d=1;d<=dim;d++){
+    const date=ds(S.year,S.month,d);
+    const it=today.getDate()===d&&today.getMonth()===S.month&&today.getFullYear()===S.year;
+    const sel=selDay===date;
+    const hasEv=evd.includes(date);
+    html+=`<div class="cc${it?' today':''}${sel?' selected':''}${hasEv?' has-ev':''}" onclick="selectDay('${date}')"><span>${d}</span><span class="dot"></span></div>`;
+  }
+  g.innerHTML=html;
+  const el=document.getElementById('ev-list');
+  const sorted=[...S.events].sort((a,b)=>a.date.localeCompare(b.date));
+  if(!sorted.length){el.innerHTML='<p class="empty-hint">Noch keine Ereignisse.</p>';return}
+  el.innerHTML=sorted.map((e,i)=>`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><div><div class="entry-title">${h(e.title)}</div><div class="entry-meta">${fd(e.date)}&nbsp;<span class="badge b-${e.cat}">${CL[e.cat]||e.cat}</span></div></div><button class="del" onclick="delEv(${i})">✕ Löschen</button></div></div>`).join('');
+}
+function addEv(){
+  const d=document.getElementById('ev-d').value,t=document.getElementById('ev-t').value.trim(),c=document.getElementById('ev-c').value;
+  if(!d||!t)return;
+  S.events.push({date:d,title:t,cat:c});save();
+  document.getElementById('ev-t').value='';
+  if(selDay===d)renderDayPanel();
+  renderCal();
+}
+function delEv(i){S.events.splice(i,1);save();if(selDay)renderDayPanel();renderCal()}
+
+function renderDat(){
+  const l=document.getElementById('d-list');
+  if(!S.data.length){l.innerHTML='<p class="empty-hint">Noch keine Einträge.</p>';return}
+  l.innerHTML=S.data.map((d,i)=>`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><div><div class="entry-title">${h(d.label)}</div><div class="entry-meta">${h(d.value)}&nbsp;<span class="badge b-${d.cat}">${DL[d.cat]||d.cat}</span></div></div><button class="del" onclick="delD(${i})">✕ Löschen</button></div></div>`).join('');
+}
+function addD(){
+  const l=document.getElementById('dl').value.trim(),v=document.getElementById('dv').value.trim(),c=document.getElementById('dc').value;
+  if(!l||!v)return;
+  S.data.push({label:l,value:v,cat:c});save();
+  document.getElementById('dl').value='';document.getElementById('dv').value='';renderDat();
+}
+function delD(i){if(confirm('Eintrag löschen?')){S.data.splice(i,1);save();renderDat()}}
+
+function dzOver(e){e.preventDefault();document.getElementById('drop-zone').classList.add('drag-over')}
+function dzLeave(){document.getElementById('drop-zone').classList.remove('drag-over')}
+function dzDrop(e){e.preventDefault();dzLeave();handleFiles(e.dataTransfer.files)}
+
+function handleFiles(files){
+  Array.from(files).forEach(file=>{
+    if(file.size>5*1024*1024)document.getElementById('size-warn').style.display='';
+    const r=new FileReader();
+    r.onload=ev=>{
+      S.docs.push({name:file.name,size:file.size,type:mimeIcon(file.type),data:ev.target.result,added:new Date().toLocaleDateString('de-CH')});
+      save();renderDocs();
+    };
+    r.readAsDataURL(file);
+  });
+}
+function mimeIcon(m){
+  if(m.includes('pdf'))return'📄';
+  if(m.includes('word')||m.includes('document'))return'📝';
+  if(m.includes('sheet')||m.includes('excel'))return'📊';
+  if(m.includes('presentation')||m.includes('powerpoint'))return'📑';
+  if(m.includes('image'))return'🖼️';
+  if(m.includes('text'))return'📃';
+  if(m.includes('zip')||m.includes('archive'))return'🗜️';
+  return'📁';
+}
+function fmtSize(b){if(!b)return'';if(b<1024)return b+'B';if(b<1048576)return Math.round(b/1024)+'KB';return(b/1048576).toFixed(1)+'MB'}
+
+function renderDocs(){
+  const l=document.getElementById('doc-list');
+  if(!S.docs.length){l.innerHTML='<p class="empty-hint">Noch keine Dateien. Einfach hier hineinziehen!</p>';return}
+  l.innerHTML=S.docs.map((d,i)=>`<div class="card"><div class="doc-card"><div class="doc-info"><span class="doc-icon-big">${d.type}</span><div style="min-width:0"><div class="doc-name">${h(d.name)}</div><div class="doc-meta">${fmtSize(d.size)} · ${h(d.added||'')}</div></div></div><div class="doc-actions"><button class="btn-dl" onclick="dlDoc(${i})">⬇ Öffnen</button><button class="del" onclick="delDoc(${i})">✕</button></div></div></div>`).join('');
+}
+function dlDoc(i){const d=S.docs[i];const a=document.createElement('a');a.href=d.data;a.download=d.name;a.click()}
+function delDoc(i){if(confirm('Datei "'+S.docs[i].name+'" löschen?')){S.docs.splice(i,1);save();renderDocs()}}
+
+function renderNotes(){
+  const l=document.getElementById('n-list');
+  if(!S.notes.length){l.innerHTML='<p class="empty-hint">Noch keine Notizen.</p>';return}
+  l.innerHTML=S.notes.map((n,i)=>`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><div><div class="entry-title">${h(n.title)}</div><div class="entry-meta">${h(n.body)}</div></div><button class="del" onclick="delN(${i})">✕ Löschen</button></div></div>`).join('');
+}
+function addN(){
+  const t=document.getElementById('nt').value.trim(),b=document.getElementById('nb').value.trim();
+  if(!t)return;S.notes.push({title:t,body:b});save();
+  document.getElementById('nt').value='';document.getElementById('nb').value='';renderNotes();
+}
+function delN(i){S.notes.splice(i,1);save();renderNotes()}
+
+function exportData(){
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='familiendaten_backup.json';a.click();
+}
+function triggerImport(){document.getElementById('imp-file').click()}
+function importData(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{try{const p=JSON.parse(ev.target.result);S={...S,...p};save();renderCal();renderDat();renderDocs();renderNotes();alert('Daten importiert!')}catch(err){alert('Ungültige Datei.')}};
+  r.readAsText(f);e.target.value='';
+}
+
+const stored=localStorage.getItem(PK);
+if(!stored){
+  document.getElementById('lock-title').textContent='🏠 Familien-App einrichten';
+  document.getElementById('lock-sub').textContent='Willkommen! Lege ein Familienpasswort fest. Du kannst es jederzeit ändern.';
+}
+</script>
+</body>
+</html>
